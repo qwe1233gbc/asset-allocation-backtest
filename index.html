@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,232 +7,197 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --text: #1e293b;
-    --text-secondary: #64748b;
-    --border: #e2e8f0;
-    --sp500: #2563eb;
-    --nasdaq: #7c3aed;
-    --divlow: #dc2626;
-    --portfolio: #059669;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-lg: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+    --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --text-secondary: #64748b;
+    --border: #e2e8f0; --sp500: #2563eb; --nasdaq: #7c3aed; --divlow: #dc2626;
+    --portfolio: #059669; --dca: #f59e0b; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,0.07); --hover: #f1f5f9;
+    --metric-bg: #f8fafc; --header-bg: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    --header-text: white; --header-sub: #94a3b8; --tag-bg: rgba(255,255,255,0.1);
+    --pos-color: #059669; --neg-color: #dc2626; --neutral-color: #64748b;
+    --input-bg: white; --input-border: #e2e8f0;
+  }
+  [data-theme="dark"] {
+    --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --text-secondary: #94a3b8;
+    --border: #334155; --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,0.4); --hover: #334155;
+    --metric-bg: #1a2332; --header-bg: #0c1222;
+    --header-text: #e2e8f0; --header-sub: #94a3b8; --tag-bg: rgba(255,255,255,0.05);
+    --input-bg: #1a2332; --input-border: #334155;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    min-height: 100vh;
+    background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
   }
 
   /* Header */
   .header {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    color: white;
-    padding: 24px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    background: var(--header-bg); color: var(--header-text);
+    padding: 16px 0; position: sticky; top: 0; z-index: 100;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
   .header-inner {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
+    max-width: 1500px; margin: 0 auto; padding: 0 28px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   }
-  .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
-  .header .subtitle { font-size: 0.85rem; color: #94a3b8; }
-  .header .data-info {
-    font-size: 0.8rem;
-    color: #94a3b8;
-    background: rgba(255,255,255,0.1);
-    padding: 6px 14px;
-    border-radius: 20px;
+  .header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header .subtitle { font-size: 0.8rem; color: var(--header-sub); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .data-info { font-size: 0.78rem; color: var(--header-sub); background: var(--tag-bg); padding: 5px 12px; border-radius: 16px; }
+  .theme-toggle {
+    background: var(--tag-bg); border: none; color: var(--header-text);
+    padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;
   }
+  .theme-toggle:hover { background: rgba(255,255,255,0.2); }
+
+  /* Section Nav */
+  .section-nav {
+    max-width: 1500px; margin: 0 auto; padding: 0 28px;
+    display: flex; gap: 4px; border-bottom: 2px solid var(--border); overflow-x: auto;
+    background: var(--card); position: sticky; top: 76px; z-index: 99;
+  }
+  .section-tab {
+    padding: 10px 18px; border: none; background: none; cursor: pointer;
+    font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    white-space: nowrap; transition: color 0.15s, border-color 0.15s;
+  }
+  .section-tab:hover { color: var(--text); }
+  .section-tab.active { color: var(--sp500); border-bottom-color: var(--sp500); }
 
   /* Main Layout */
   .main {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px 32px;
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    grid-template-rows: auto auto;
-    gap: 20px;
+    max-width: 1500px; margin: 0 auto; padding: 20px 28px;
+    display: grid; grid-template-columns: 370px 1fr; gap: 18px;
   }
-
-  /* Cards */
   .card {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 20px 24px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
+    background: var(--card); border-radius: 12px; padding: 18px 22px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+    transition: background 0.3s, border-color 0.3s;
   }
   .card-title {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 16px;
+    font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px;
   }
 
-  /* Sliders Panel */
-  .sliders-panel {
-    grid-row: 1 / 3;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .slider-group { margin-bottom: 4px; }
-  .slider-label {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 8px;
-  }
-  .slider-label .name { font-weight: 600; font-size: 0.95rem; }
-  .slider-label .pct { font-size: 1.5rem; font-weight: 700; }
+  /* Sliders */
+  .sliders-panel { grid-row: 1 / 99; display: flex; flex-direction: column; gap: 14px; }
+  .slider-group { margin-bottom: 2px; }
+  .slider-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .slider-label .name { font-weight: 600; font-size: 0.9rem; }
+  .slider-label .pct { font-size: 1.4rem; font-weight: 700; }
   .slider-label.sp500 .pct { color: var(--sp500); }
   .slider-label.nasdaq .pct { color: var(--nasdaq); }
   .slider-label.divlow .pct { color: var(--divlow); }
-
-  input[type=range] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    outline: none;
-  }
-  input[type=range].sp500 { accent-color: var(--sp500); background: linear-gradient(to right, var(--sp500) 0%, var(--sp500) var(--pct), #e2e8f0 var(--pct), #e2e8f0 100%); }
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 7px; border-radius: 4px; outline: none; }
+  input[type=range].sp500 { accent-color: var(--sp500); }
   input[type=range].nasdaq { accent-color: var(--nasdaq); }
   input[type=range].divlow { accent-color: var(--divlow); }
-
-  .sum-indicator {
-    text-align: center;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-  .sum-indicator.valid { background: #ecfdf5; color: #059669; }
-  .sum-indicator.invalid { background: #fef2f2; color: #dc2626; }
-
-  /* Metrics Grid */
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-  .metric-card {
-    text-align: center;
-    padding: 16px 12px;
-    background: #f8fafc;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-  }
-  .metric-card .label { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 4px; }
-  .metric-card .value { font-size: 1.4rem; font-weight: 700; }
-  .metric-card .value.good { color: #059669; }
-  .metric-card .value.warn { color: #d97706; }
-  .metric-card .value.bad { color: #dc2626; }
-
-  /* Chart containers */
-  .chart-container {
-    position: relative;
-    width: 100%;
-    height: 300px;
-  }
-  .chart-container.tall { height: 350px; }
-
-  /* Allocation preview bars */
-  .alloc-bars {
-    display: flex;
-    height: 24px;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-top: 8px;
-  }
+  .alloc-bars { display: flex; height: 20px; border-radius: 5px; overflow: hidden; margin-top: 6px; }
   .alloc-bar.sp500 { background: var(--sp500); }
   .alloc-bar.nasdaq { background: var(--nasdaq); }
   .alloc-bar.divlow { background: var(--divlow); }
-
-  /* Responsive */
-  @media (max-width: 1024px) {
-    .main {
-      grid-template-columns: 1fr;
-      padding: 16px;
-    }
-    .sliders-panel { grid-row: auto; }
-    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-    .header h1 { font-size: 1.2rem; }
-  }
-  @media (max-width: 640px) {
-    .metrics-grid { grid-template-columns: 1fr 1fr; }
-    .main { padding: 12px; }
-    .card { padding: 14px 16px; }
-    .chart-container { height: 250px; }
-  }
-
-  /* Loading / Error */
-  .loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(255,255,255,0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-    font-size: 1.2rem;
-    font-weight: 600;
-  }
-  .error-toast {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
-    padding: 12px 20px;
-    border-radius: 8px;
-    margin-bottom: 16px;
-  }
+  .sum-indicator { text-align: center; padding: 8px; border-radius: 7px; font-weight: 600; font-size: 0.85rem; }
+  .sum-indicator.valid { background: #ecfdf5; color: #059669; }
+  .sum-indicator.invalid { background: #fef2f2; color: #dc2626; }
+  [data-theme="dark"] .sum-indicator.valid { background: #064e3b; color: #6ee7b7; }
+  [data-theme="dark"] .sum-indicator.invalid { background: #7f1d1d; color: #fca5a5; }
 
   /* Quick Select */
-  .quick-select {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  .quick-select { display: flex; gap: 6px; flex-wrap: wrap; }
   .quick-btn {
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    background: white;
-    cursor: pointer;
-    font-size: 0.82rem;
-    transition: all 0.15s;
-    color: var(--text);
+    padding: 5px 12px; border: 1px solid var(--border); border-radius: 18px; background: var(--card);
+    cursor: pointer; font-size: 0.78rem; color: var(--text); transition: all 0.15s;
   }
-  .quick-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .quick-btn:hover { background: var(--hover); }
   .quick-btn.active { background: #1e293b; color: white; border-color: #1e293b; }
 
-  footer {
-    text-align: center;
-    padding: 20px;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    max-width: 1400px;
-    margin: 0 auto;
+  /* DCA & Rebalance Settings */
+  .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .setting-row .label { font-size: 0.88rem; font-weight: 500; }
+  .toggle-switch { position: relative; width: 44px; height: 24px; display: inline-block; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e1; border-radius: 24px; transition: 0.25s; }
+  .toggle-slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.25s; }
+  .toggle-switch input:checked + .toggle-slider { background: var(--sp500); }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+  .num-input {
+    width: 100px; padding: 6px 10px; border: 1px solid var(--input-border); border-radius: 7px;
+    font-size: 0.88rem; background: var(--input-bg); color: var(--text); text-align: right;
   }
-  footer a { color: var(--sp500); text-decoration: none; }
+  .strategy-select {
+    width: 100%; padding: 7px 10px; border: 1px solid var(--input-border); border-radius: 7px;
+    font-size: 0.85rem; background: var(--input-bg); color: var(--text);
+  }
+
+  /* Metrics */
+  .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .metric-card {
+    text-align: center; padding: 12px 10px; background: var(--metric-bg);
+    border-radius: 9px; border: 1px solid var(--border); transition: background 0.3s;
+  }
+  .metric-card .label { font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 2px; }
+  .metric-card .value { font-size: 1.25rem; font-weight: 700; }
+  .metric-card .sub { font-size: 0.73rem; color: var(--text-secondary); margin-top: 2px; }
+  .value.good { color: #059669; } .value.warn { color: #d97706; } .value.bad { color: #dc2626; }
+
+  /* Charts */
+  .chart-container { position: relative; width: 100%; height: 320px; }
+  .chart-container.tall { height: 380px; }
+  .chart-section { display: none; }
+  .chart-section.active { display: contents; }
+
+  /* Yearly Returns Table */
+  .yearly-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .yearly-table th { text-align: center; padding: 6px 8px; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; }
+  .yearly-table td { text-align: center; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .yearly-table .year-col { text-align: left; font-weight: 600; }
+  .yearly-table .pos { color: var(--pos-color); font-weight: 500; }
+  .yearly-table .neg { color: var(--neg-color); font-weight: 500; }
+  .yearly-table-wrapper { max-height: 500px; overflow-y: auto; }
+
+  /* Comparison table */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .compare-table th { text-align: right; padding: 6px 10px; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--text-secondary); }
+  .compare-table th:first-child { text-align: left; }
+  .compare-table td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .compare-table td:first-child { text-align: left; font-weight: 500; }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: 1fr; padding: 14px; }
+    .sliders-panel { grid-row: auto; }
+    .section-nav { top: 65px; }
+    .header h1 { font-size: 1.15rem; }
+  }
+  @media (max-width: 640px) {
+    .main { padding: 10px; }
+    .card { padding: 12px 14px; }
+    .chart-container { height: 260px; }
+    .yearly-table { font-size: 0.72rem; }
+  }
+
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(255,255,255,0.92);
+    display: flex; align-items: center; justify-content: center; z-index: 200;
+    font-size: 1.15rem; font-weight: 600;
+  }
+  [data-theme="dark"] .loading-overlay { background: rgba(15,23,42,0.95); }
+  .error-toast { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 18px; border-radius: 8px; }
+  footer {
+    text-align: center; padding: 18px; color: var(--text-secondary); font-size: 0.78rem;
+    max-width: 1500px; margin: 0 auto;
+  }
+
+  .dca-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;
+    font-weight: 600; margin-left: 6px;
+  }
+  .dca-badge.on { background: #fef3c7; color: #92400e; }
+  .dca-badge.off { background: #e2e8f0; color: #64748b; }
+  [data-theme="dark"] .dca-badge.on { background: #78350f; color: #fcd34d; }
+  [data-theme="dark"] .dca-badge.off { background: #334155; color: #94a3b8; }
 </style>
 </head>
 <body>
@@ -243,146 +208,191 @@
       <h1>资产配置回测工具</h1>
       <div class="subtitle">标普500 · 纳斯达克100 · 中证红利低波 — 分红再投资</div>
     </div>
-    <div class="data-info" id="dataInfo">加载数据中...</div>
+    <div class="header-right">
+      <div class="data-info" id="dataInfo">加载数据中...</div>
+      <button class="theme-toggle" id="themeToggle" title="切换暗色模式">🌙 暗色</button>
+    </div>
   </div>
 </div>
 
 <div class="loading-overlay" id="loading">加载回测数据中...</div>
 
+<div class="section-nav" id="sectionNav">
+  <button class="section-tab active" data-section="overview">概览</button>
+  <button class="section-tab" data-section="returns">收益分析</button>
+  <button class="section-tab" data-section="risk">风险分析</button>
+  <button class="section-tab" data-section="compare">策略对比</button>
+</div>
+
 <div class="main">
   <!-- LEFT: Controls -->
   <div class="sliders-panel">
+    <!-- Allocation Sliders -->
     <div class="card">
       <div class="card-title">配置比例</div>
-
       <div class="slider-group">
-        <div class="slider-label sp500">
-          <span class="name">标普500 (SP500)</span>
-          <span class="pct" id="spPct">40%</span>
-        </div>
+        <div class="slider-label sp500"><span class="name">标普500</span><span class="pct" id="spPct">40%</span></div>
         <input type="range" min="0" max="100" value="40" step="1" class="sp500" id="spSlider">
       </div>
-
-      <div class="slider-group" style="margin-top:16px;">
-        <div class="slider-label nasdaq">
-          <span class="name">纳斯达克100 (Nasdaq100)</span>
-          <span class="pct" id="nqPct">35%</span>
-        </div>
+      <div class="slider-group" style="margin-top:10px;">
+        <div class="slider-label nasdaq"><span class="name">纳斯达克100</span><span class="pct" id="nqPct">35%</span></div>
         <input type="range" min="0" max="100" value="35" step="1" class="nasdaq" id="nqSlider">
       </div>
-
-      <div class="slider-group" style="margin-top:16px;">
-        <div class="slider-label divlow">
-          <span class="name">红利低波 (中证红利低波)</span>
-          <span class="pct" id="dvPct">25%</span>
-        </div>
+      <div class="slider-group" style="margin-top:10px;">
+        <div class="slider-label divlow"><span class="name">红利低波</span><span class="pct" id="dvPct">25%</span></div>
         <input type="range" min="0" max="100" value="25" step="1" class="divlow" id="dvSlider">
       </div>
-
       <div class="alloc-bars">
         <div class="alloc-bar sp500" id="allocSp" style="width:40%"></div>
         <div class="alloc-bar nasdaq" id="allocNq" style="width:35%"></div>
         <div class="alloc-bar divlow" id="allocDv" style="width:25%"></div>
       </div>
-
-      <div class="sum-indicator valid" id="sumIndicator" style="margin-top:12px;">合计: 100%</div>
-
-      <div style="margin-top:12px;">
-        <div class="card-title" style="margin-bottom:8px;">快速选择</div>
+      <div class="sum-indicator valid" id="sumIndicator" style="margin-top:10px;">合计: 100%</div>
+      <div style="margin-top:10px;">
+        <div class="card-title" style="margin-bottom:6px;">快速选择</div>
         <div class="quick-select" id="quickSelect">
-          <button class="quick-btn" data-s="60" data-n="30" data-d="10">60/30/10 稳健</button>
-          <button class="quick-btn" data-s="40" data-n="40" data-d="20">40/40/20 均衡</button>
-          <button class="quick-btn" data-s="0" data-n="65" data-d="35">0/65/35 最优夏普</button>
+          <button class="quick-btn" data-s="60" data-n="30" data-d="10">60/30/10</button>
+          <button class="quick-btn" data-s="40" data-n="40" data-d="20">40/40/20</button>
+          <button class="quick-btn" data-s="0" data-n="65" data-d="35">0/65/35</button>
           <button class="quick-btn" data-s="33" data-n="33" data-d="34">三等分</button>
           <button class="quick-btn" data-s="100" data-n="0" data-d="0">纯SP500</button>
-          <button class="quick-btn active" data-s="40" data-n="35" data-d="25">40/35/25 默认</button>
+          <button class="quick-btn active" data-s="40" data-n="35" data-d="25">40/35/25</button>
         </div>
+      </div>
+    </div>
+
+    <!-- DCA Settings -->
+    <div class="card">
+      <div class="card-title">定投设置 <span class="dca-badge off" id="dcaBadge">关闭</span></div>
+      <div class="setting-row">
+        <span class="label">启用每月定投</span>
+        <label class="toggle-switch"><input type="checkbox" id="dcaToggle"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row" id="dcaAmountRow" style="opacity:0.4;pointer-events:none;">
+        <span class="label">每月投入 (元)</span>
+        <input type="number" class="num-input" id="dcaAmount" value="10000" min="100" max="10000000" step="100" disabled>
+      </div>
+      <div class="setting-row">
+        <span class="label">初始本金 (元)</span>
+        <input type="number" class="num-input" id="initialCapital" value="0" min="0" max="100000000" step="1000">
+      </div>
+    </div>
+
+    <!-- Rebalancing -->
+    <div class="card">
+      <div class="card-title">再平衡策略</div>
+      <div class="setting-row">
+        <span class="label">调仓策略</span>
+        <select class="strategy-select" id="rebalanceStrategy">
+          <option value="none">不调仓</option>
+          <option value="annual" selected>每年再平衡</option>
+          <option value="threshold5">偏离5%触发</option>
+        </select>
       </div>
     </div>
 
     <!-- Metrics Cards -->
-    <div class="card" id="metricsCard">
-      <div class="card-title">关键指标 (全周期 2005-2026)</div>
+    <div class="card">
+      <div class="card-title">关键指标 (2005-2026全周期)</div>
       <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="label">年化收益</div>
-          <div class="value good" id="metricReturn">--</div>
-        </div>
-        <div class="metric-card">
-          <div class="label">年化波动率</div>
-          <div class="value" id="metricVol">--</div>
-        </div>
-        <div class="metric-card">
-          <div class="label">最大回撤</div>
-          <div class="value" id="metricMDD">--</div>
-        </div>
-        <div class="metric-card">
-          <div class="label">夏普比率</div>
-          <div class="value" id="metricSharpe">--</div>
-        </div>
+        <div class="metric-card"><div class="label">年化收益</div><div class="value good" id="metricReturn">--</div></div>
+        <div class="metric-card"><div class="label">年化波动率</div><div class="value" id="metricVol">--</div></div>
+        <div class="metric-card"><div class="label">最大回撤</div><div class="value" id="metricMDD">--</div></div>
+        <div class="metric-card"><div class="label">夏普比率</div><div class="value" id="metricSharpe">--</div></div>
       </div>
     </div>
 
-    <!-- Window summary table -->
-    <div class="card" id="windowTable">
-      <div class="card-title">不同期限年化收益</div>
-      <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-        <thead>
-          <tr style="border-bottom:2px solid var(--border);">
-            <th style="text-align:left;padding:8px 4px;">期限</th>
-            <th style="text-align:right;padding:8px 4px;">均值</th>
-            <th style="text-align:right;padding:8px 4px;">中位数</th>
-            <th style="text-align:right;padding:8px 4px;">最低</th>
-            <th style="text-align:right;padding:8px 4px;">最高</th>
-            <th style="text-align:right;padding:8px 4px;">窗口数</th>
-          </tr>
-        </thead>
+    <!-- Window Table -->
+    <div class="card">
+      <div class="card-title">滚动年化收益统计</div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+        <thead><tr style="border-bottom:2px solid var(--border);">
+          <th style="text-align:left;padding:5px 3px;">期限</th>
+          <th style="text-align:right;padding:5px 3px;">均值</th>
+          <th style="text-align:right;padding:5px 3px;">中位数</th>
+          <th style="text-align:right;padding:5px 3px;">最低</th>
+          <th style="text-align:right;padding:5px 3px;">最高</th>
+        </tr></thead>
         <tbody id="windowTableBody"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- RIGHT: Charts -->
-  <div class="card" style="grid-column: 2;">
-    <div class="card-title">滚动年化收益 — 5年期与10年期</div>
-    <div class="chart-container" style="height:340px;">
-      <canvas id="rollingChart"></canvas>
+  <!-- RIGHT: Content Sections -->
+
+  <!-- SECTION: Overview -->
+  <div class="chart-section active" data-section="overview">
+    <div class="card">
+      <div class="card-title">累计收益对比 — 一次性投入 vs 定投</div>
+      <div class="chart-container tall"><canvas id="cumChart"></canvas></div>
     </div>
-    <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;">
-      每个点代表从该日期起投，持有所选期限的年化收益。穿越多轮牛熊。
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">日历年收益 (%)</div>
+      <div class="yearly-table-wrapper"><table class="yearly-table" id="yearlyTable"></table></div>
     </div>
   </div>
 
-  <div class="card" style="grid-column: 2;">
-    <div class="card-title">累计收益对比 (2005-2026，归一化起点=1)</div>
-    <div class="chart-container tall">
-      <canvas id="cumChart"></canvas>
+  <!-- SECTION: Returns -->
+  <div class="chart-section" data-section="returns">
+    <div class="card">
+      <div class="card-title">滚动年化收益 — 5年期与10年期</div>
+      <div class="chart-container" style="height:350px;"><canvas id="rollingChart"></canvas></div>
+      <div style="font-size:0.76rem;color:var(--text-secondary);margin-top:4px;">
+        每个点代表从该日期起投持有所选期限的年化收益。覆盖2008金融危机、2020疫情、2022加息等多轮牛熊。
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">有效前沿 — 风险/收益散点</div>
+      <div class="chart-container" style="height:380px;"><canvas id="frontierChart"></canvas></div>
     </div>
   </div>
 
-  <div class="card" style="grid-column: 2;">
-    <div class="card-title">有效前沿 — 风险/收益散点图</div>
-    <div class="chart-container" style="height:400px;">
-      <canvas id="frontierChart"></canvas>
+  <!-- SECTION: Risk -->
+  <div class="chart-section" data-section="risk">
+    <div class="card">
+      <div class="card-title">回撤曲线 — 当前配置</div>
+      <div class="chart-container tall"><canvas id="drawdownChart"></canvas></div>
+      <div style="font-size:0.76rem;color:var(--text-secondary);margin-top:4px;">
+        显示任意时间点的回撤百分比。阴影区域越大表示回撤越深、持续时间越长。
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: Compare -->
+  <div class="chart-section" data-section="compare">
+    <div class="card">
+      <div class="card-title">再平衡策略对比 — 累计收益</div>
+      <div class="chart-container tall"><canvas id="rebalanceChart"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">策略详细对比</div>
+      <table class="compare-table" id="compareTable"></table>
     </div>
   </div>
 </div>
 
 <footer>
-  数据来源: akshare (index_us_stock_sina / index_zh_a_hist) · 2005-02 至 2026-04 · 纳斯达克综合指数作为纳指100代理 · 分红再投资估算
+  数据来源: akshare · 2005-02 至 2026-04 · 纳斯达克综合指数作为纳指100代理 · 分红再投资估算 · 仅供研究参考
 </footer>
 
 <script>
-// ── Global State ──
+// ═══════════════════════════════════════════════
+// Global State
+// ═══════════════════════════════════════════════
 let monthlyData = [];
-let precomputed = {}; // portfolios dict
-let rollingData = {}; // { '5Y': {...}, '10Y': {...} }
+let precomputed = {};
 let metadata = {};
 let charts = {};
 let currentWeights = { sp: 0.40, nq: 0.35, dv: 0.25 };
-let currentPreset = '40/35/25 默认';
+let dcaEnabled = false;
+let dcaAmount = 10000;
+let initialCapital = 0;
+let rebalanceStrategy = 'annual';
+let currentSection = 'overview';
 
-// ── Load Data ──
+// ═══════════════════════════════════════════════
+// Data Loading
+// ═══════════════════════════════════════════════
 async function loadData() {
   try {
     const resp = await fetch('backtest_data.json');
@@ -390,13 +400,10 @@ async function loadData() {
     const data = await resp.json();
     monthlyData = data.monthly_data;
     precomputed = data.portfolios;
-    rollingData = data.rolling_windows;
     metadata = data.metadata;
-
     document.getElementById('loading').style.display = 'none';
     document.getElementById('dataInfo').textContent =
       `${metadata.data_start} → ${metadata.data_end} · ${metadata.n_months}个月 · ${metadata.n_years}年`;
-
     initApp();
   } catch (err) {
     document.getElementById('loading').innerHTML =
@@ -404,7 +411,9 @@ async function loadData() {
   }
 }
 
-// ── Computation Engine ──
+// ═══════════════════════════════════════════════
+// Computation Engine
+// ═══════════════════════════════════════════════
 function monthlyPortfolioReturns(sp, nq, dv) {
   return monthlyData.map(m => ({
     date: m.date,
@@ -414,18 +423,14 @@ function monthlyPortfolioReturns(sp, nq, dv) {
 
 function cumulativeFromReturns(monthlyRets) {
   let cum = 1;
-  return monthlyRets.map(m => {
-    cum *= (1 + m.ret);
-    return { date: m.date, cum };
-  });
+  return monthlyRets.map(m => { cum *= (1 + m.ret); return { date: m.date, cum }; });
 }
 
 function annualizedReturn(monthlyRets) {
-  if (monthlyRets.length === 0) return 0;
+  if (!monthlyRets.length) return 0;
   let cum = 1;
   for (const m of monthlyRets) cum *= (1 + m.ret);
-  const years = monthlyRets.length / 12;
-  return Math.pow(cum, 1 / years) - 1;
+  return Math.pow(cum, 1 / (monthlyRets.length / 12)) - 1;
 }
 
 function annualizedVolatility(monthlyRets) {
@@ -436,10 +441,8 @@ function annualizedVolatility(monthlyRets) {
   return Math.sqrt(variance * 12);
 }
 
-function maxDrawdown(monthlyRets) {
-  let peak = -Infinity;
-  let cum = 1;
-  let mdd = 0;
+function maxDrawdownFromRets(monthlyRets) {
+  let peak = -Infinity, cum = 1, mdd = 0;
   for (const m of monthlyRets) {
     cum *= (1 + m.ret);
     if (cum > peak) peak = cum;
@@ -447,6 +450,15 @@ function maxDrawdown(monthlyRets) {
     if (dd < mdd) mdd = dd;
   }
   return mdd;
+}
+
+function drawdownSeries(monthlyRets) {
+  let peak = -Infinity, cum = 1;
+  return monthlyRets.map(m => {
+    cum *= (1 + m.ret);
+    if (cum > peak) peak = cum;
+    return { date: m.date, dd: (cum - peak) / peak };
+  });
 }
 
 function sharpeRatio(annRet, annVol, riskFree = 0.03) {
@@ -457,83 +469,222 @@ function computeRolling(monthlyRets, windowMonths) {
   const result = [];
   for (let i = 0; i <= monthlyRets.length - windowMonths; i++) {
     const slice = monthlyRets.slice(i, i + windowMonths);
-    const annRet = annualizedReturn(slice);
-    result.push({
-      start: slice[0].date,
-      end: slice[slice.length - 1].date,
-      ann_ret: annRet
-    });
+    result.push({ start: slice[0].date, end: slice[slice.length - 1].date, ann_ret: annualizedReturn(slice) });
   }
   return result;
 }
 
-// ── Init ──
+// ═══════════════════════════════════════════════
+// DCA (定投) Simulation
+// ═══════════════════════════════════════════════
+function simulateDCA(monthlyRets, monthlyContribution, weights, initialCapital = 0) {
+  const { sp, nq, dv } = weights;
+  // Derive price series from cumulative returns (base price = 1 at start)
+  const sp100 = monthlyPortfolioReturns(1, 0, 0);
+  const nq100 = monthlyPortfolioReturns(0, 1, 0);
+  const dv100 = monthlyPortfolioReturns(0, 0, 1);
+
+  let spShares = initialCapital * sp;  // initial shares (price=1 at start)
+  let nqShares = initialCapital * nq;
+  let dvShares = initialCapital * dv;
+  let totalInvested = initialCapital;
+
+  let spPrice = 1, nqPrice = 1, dvPrice = 1;
+  let spCum = 1, nqCum = 1, dvCum = 1;
+
+  const result = [];
+
+  for (let i = 0; i < monthlyRets.length; i++) {
+    // Update prices from monthly returns
+    spPrice *= (1 + sp100[i].ret);
+    nqPrice *= (1 + nq100[i].ret);
+    dvPrice *= (1 + dv100[i].ret);
+
+    // Buy with monthly contribution
+    if (monthlyContribution > 0) {
+      const spBuy = (monthlyContribution * sp) / spPrice;
+      const nqBuy = (monthlyContribution * nq) / nqPrice;
+      const dvBuy = (monthlyContribution * dv) / dvPrice;
+      spShares += spBuy;
+      nqShares += nqBuy;
+      dvShares += dvBuy;
+      totalInvested += monthlyContribution;
+    }
+
+    const portfolioValue = spShares * spPrice + nqShares * nqPrice + dvShares * dvPrice;
+
+    result.push({
+      date: monthlyRets[i].date,
+      totalInvested,
+      portfolioValue,
+      spValue: spShares * spPrice,
+      nqValue: nqShares * nqPrice,
+      dvValue: dvShares * dvPrice
+    });
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════
+// Rebalancing Simulation
+// ═══════════════════════════════════════════════
+function simulateRebalancing(monthlyRets, weights, strategy, monthlyContribution = 0, initialCapital = 0) {
+  const { sp, nq, dv } = weights;
+  const w = [sp, nq, dv];
+
+  // Price series for each asset (base=1)
+  const sp100 = monthlyPortfolioReturns(1, 0, 0);
+  const nq100 = monthlyPortfolioReturns(0, 1, 0);
+  const dv100 = monthlyPortfolioReturns(0, 0, 1);
+
+  let shares = [initialCapital * sp, initialCapital * nq, initialCapital * dv];
+  let price = [1, 1, 1];
+  let totalInvested = initialCapital;
+  let lastRebalanceMonth = 0;
+
+  const result = [];
+
+  for (let i = 0; i < monthlyRets.length; i++) {
+    // Update prices
+    price[0] *= (1 + sp100[i].ret);
+    price[1] *= (1 + nq100[i].ret);
+    price[2] *= (1 + dv100[i].ret);
+
+    // DCA contribution
+    if (monthlyContribution > 0) {
+      shares[0] += (monthlyContribution * w[0]) / price[0];
+      shares[1] += (monthlyContribution * w[1]) / price[1];
+      shares[2] += (monthlyContribution * w[2]) / price[2];
+      totalInvested += monthlyContribution;
+    }
+
+    const totalValue = shares[0] * price[0] + shares[1] * price[1] + shares[2] * price[2];
+
+    // Check rebalancing
+    let didRebalance = false;
+    if (strategy === 'annual' && i > 0 && (i + 1) % 12 === 0) {
+      didRebalance = true;
+    } else if (strategy === 'threshold5') {
+      const actualW = [
+        shares[0] * price[0] / totalValue,
+        shares[1] * price[1] / totalValue,
+        shares[2] * price[2] / totalValue
+      ];
+      for (let j = 0; j < 3; j++) {
+        if (Math.abs(actualW[j] - w[j]) > 0.05) { didRebalance = true; break; }
+      }
+    }
+
+    if (didRebalance) {
+      lastRebalanceMonth = i;
+      // Redistribute to target weights
+      for (let j = 0; j < 3; j++) {
+        shares[j] = (totalValue * w[j]) / price[j];
+      }
+    }
+
+    result.push({
+      date: monthlyRets[i].date,
+      totalInvested,
+      portfolioValue: totalValue,
+      didRebalance
+    });
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════
+// Yearly Returns
+// ═══════════════════════════════════════════════
+function computeYearlyReturns(monthlyRets) {
+  const years = {};
+  for (const m of monthlyRets) {
+    const year = m.date.substring(0, 4);
+    if (!years[year]) years[year] = [];
+    years[year].push(m.ret);
+  }
+  const result = [];
+  for (const [year, rets] of Object.entries(years)) {
+    let cum = 1;
+    for (const r of rets) cum *= (1 + r);
+    result.push({ year, ret: cum - 1, n: rets.length });
+  }
+  result.sort((a, b) => a.year.localeCompare(b.year));
+  return result;
+}
+
+function computeAssetYearlyReturns() {
+  const sp100 = monthlyPortfolioReturns(1, 0, 0);
+  const nq100 = monthlyPortfolioReturns(0, 1, 0);
+  const dv100 = monthlyPortfolioReturns(0, 0, 1);
+  const port = monthlyPortfolioReturns(currentWeights.sp, currentWeights.nq, currentWeights.dv);
+
+  const years = {};
+  for (let i = 0; i < monthlyData.length; i++) {
+    const year = monthlyData[i].date.substring(0, 4);
+    if (!years[year]) years[year] = { sp: [], nq: [], dv: [], port: [] };
+    years[year].sp.push(sp100[i].ret);
+    years[year].nq.push(nq100[i].ret);
+    years[year].dv.push(dv100[i].ret);
+    years[year].port.push(port[i].ret);
+  }
+
+  const result = [];
+  for (const [year, data] of Object.entries(years)) {
+    const cum = (rets) => { let c = 1; for (const r of rets) c *= (1 + r); return c - 1; };
+    result.push({
+      year,
+      sp: cum(data.sp), nq: cum(data.nq), dv: cum(data.dv), port: cum(data.port)
+    });
+  }
+  result.sort((a, b) => a.year.localeCompare(b.year));
+  return result;
+}
+
+// ═══════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════
 function initApp() {
   setupSliders();
   setupQuickSelect();
+  setupDCA();
+  setupRebalance();
+  setupTheme();
+  setupSectionNav();
   updateAll();
 }
 
-// ── Sliders ──
-let activeLockedSlider = null;
-
+// ═══════════════════════════════════════════════
+// Sliders (proportional lock to 100%)
+// ═══════════════════════════════════════════════
 function setupSliders() {
-  const spSlider = document.getElementById('spSlider');
-  const nqSlider = document.getElementById('nqSlider');
-  const dvSlider = document.getElementById('dvSlider');
-  const sliders = { sp: spSlider, nq: nqSlider, dv: dvSlider };
+  const spEl = document.getElementById('spSlider');
+  const nqEl = document.getElementById('nqSlider');
+  const dvEl = document.getElementById('dvSlider');
+  const sliders = { sp: spEl, nq: nqEl, dv: dvEl };
 
   Object.entries(sliders).forEach(([key, el]) => {
     el.addEventListener('input', () => {
-      activeLockedSlider = key;
-      const current = {
-        sp: parseInt(spSlider.value),
-        nq: parseInt(nqSlider.value),
-        dv: parseInt(dvSlider.value)
-      };
-
-      // The moved slider gets its new value; redistribute the remainder proportionally
+      const current = { sp: parseInt(spEl.value), nq: parseInt(nqEl.value), dv: parseInt(dvEl.value) };
       const moved = current[key];
       const others = Object.keys(current).filter(k => k !== key);
       const remainder = 100 - moved;
-
-      // Calculate proportional split of remainder
       const otherSum = others.reduce((s, k) => s + current[k], 0);
 
       if (otherSum > 0 && remainder >= 0) {
-        // Proportional redistribution
-        others.forEach(k => {
-          const proportion = current[k] / otherSum;
-          current[k] = Math.round(remainder * proportion);
-        });
+        others.forEach(k => { current[k] = Math.round(remainder * current[k] / otherSum); });
       } else if (remainder >= 0) {
-        // Both others are 0; distribute evenly
         const each = Math.floor(remainder / others.length);
-        others.forEach((k, i) => {
-          current[k] = i === others.length - 1 ? remainder - each * (others.length - 1) : each;
-        });
+        others.forEach((k, i) => { current[k] = i === 0 ? remainder - each * (others.length - 1) : each; });
       }
-
-      // Clamp to [0, 100]
       others.forEach(k => { current[k] = Math.max(0, Math.min(100, current[k])); });
-
-      // Fix rounding: ensure sum is exactly 100
       const newSum = current.sp + current.nq + current.dv;
       if (newSum !== 100 && others.length > 0) {
-        current[others[0]] += (100 - newSum);
-        current[others[0]] = Math.max(0, Math.min(100, current[others[0]]));
+        current[others[0]] = Math.max(0, Math.min(100, current[others[0]] + (100 - newSum)));
       }
-
-      // Apply values (suppress events to avoid recursion)
-      spSlider.value = current.sp;
-      nqSlider.value = current.nq;
-      dvSlider.value = current.dv;
-
-      updateDisplay();
-    });
-
-    el.addEventListener('change', () => {
-      activeLockedSlider = null;
+      spEl.value = current.sp; nqEl.value = current.nq; dvEl.value = current.dv;
       updateDisplay();
     });
   });
@@ -551,396 +702,505 @@ function updateDisplay() {
 
   const sumEl = document.getElementById('sumIndicator');
   if (total === 100) {
-    sumEl.textContent = '合计: 100%';
-    sumEl.className = 'sum-indicator valid';
+    sumEl.textContent = '合计: 100%'; sumEl.className = 'sum-indicator valid';
   } else {
     sumEl.textContent = `合计: ${total}% (${total > 100 ? '超出' : '不足'}${Math.abs(total - 100)}%)`;
     sumEl.className = 'sum-indicator invalid';
   }
 
-  document.getElementById('allocSp').style.width = Math.max(0, sp / total * 100) + '%';
-  document.getElementById('allocNq').style.width = Math.max(0, nq / total * 100) + '%';
-  document.getElementById('allocDv').style.width = Math.max(0, dv / total * 100) + '%';
+  document.getElementById('allocSp').style.width = total > 0 ? Math.max(0, sp / total * 100) + '%' : '0%';
+  document.getElementById('allocNq').style.width = total > 0 ? Math.max(0, nq / total * 100) + '%' : '0%';
+  document.getElementById('allocDv').style.width = total > 0 ? Math.max(0, dv / total * 100) + '%' : '0%';
 
-  if (total > 0) {
-    currentWeights = { sp: sp / 100, nq: nq / 100, dv: dv / 100 };
-  }
-
+  if (total > 0) currentWeights = { sp: sp / 100, nq: nq / 100, dv: dv / 100 };
   updateAll();
 }
 
-// ── Quick Select ──
+// ═══════════════════════════════════════════════
+// Quick Select
+// ═══════════════════════════════════════════════
 function setupQuickSelect() {
   document.getElementById('quickSelect').addEventListener('click', (e) => {
     const btn = e.target.closest('.quick-btn');
     if (!btn) return;
-
-    const s = parseInt(btn.dataset.s);
-    const n = parseInt(btn.dataset.n);
-    const d = parseInt(btn.dataset.d);
-
-    document.getElementById('spSlider').value = s;
-    document.getElementById('nqSlider').value = n;
-    document.getElementById('dvSlider').value = d;
-
+    document.getElementById('spSlider').value = btn.dataset.s;
+    document.getElementById('nqSlider').value = btn.dataset.n;
+    document.getElementById('dvSlider').value = btn.dataset.d;
     document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    currentPreset = btn.textContent;
-
     updateDisplay();
   });
 }
 
-// ── Master Update ──
+// ═══════════════════════════════════════════════
+// DCA Settings
+// ═══════════════════════════════════════════════
+function setupDCA() {
+  const toggle = document.getElementById('dcaToggle');
+  const amountInput = document.getElementById('dcaAmount');
+  const amountRow = document.getElementById('dcaAmountRow');
+  const capitalInput = document.getElementById('initialCapital');
+
+  toggle.addEventListener('change', () => {
+    dcaEnabled = toggle.checked;
+    const badge = document.getElementById('dcaBadge');
+    if (dcaEnabled) {
+      amountRow.style.opacity = '1'; amountRow.style.pointerEvents = 'auto';
+      amountInput.disabled = false;
+      badge.textContent = '开启'; badge.className = 'dca-badge on';
+    } else {
+      amountRow.style.opacity = '0.4'; amountRow.style.pointerEvents = 'none';
+      amountInput.disabled = true;
+      badge.textContent = '关闭'; badge.className = 'dca-badge off';
+    }
+    updateAll();
+  });
+
+  amountInput.addEventListener('input', () => {
+    dcaAmount = parseFloat(amountInput.value) || 0;
+    updateAll();
+  });
+
+  capitalInput.addEventListener('input', () => {
+    initialCapital = parseFloat(capitalInput.value) || 0;
+    updateAll();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// Rebalance Settings
+// ═══════════════════════════════════════════════
+function setupRebalance() {
+  document.getElementById('rebalanceStrategy').addEventListener('change', (e) => {
+    rebalanceStrategy = e.target.value;
+    updateAll();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// Theme Toggle
+// ═══════════════════════════════════════════════
+function setupTheme() {
+  const toggle = document.getElementById('themeToggle');
+  const html = document.documentElement;
+  // Load saved preference
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') { html.setAttribute('data-theme', 'dark'); toggle.textContent = '☀️ 亮色'; }
+
+  toggle.addEventListener('click', () => {
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    toggle.textContent = next === 'dark' ? '☀️ 亮色' : '🌙 暗色';
+    localStorage.setItem('theme', next);
+    // Redraw all charts to adapt colors
+    Object.values(charts).forEach(c => { if (c) c.destroy(); });
+    charts = {};
+    updateAll();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// Section Navigation
+// ═══════════════════════════════════════════════
+function setupSectionNav() {
+  document.getElementById('sectionNav').addEventListener('click', (e) => {
+    const tab = e.target.closest('.section-tab');
+    if (!tab) return;
+    currentSection = tab.dataset.section;
+    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.chart-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll(`.chart-section[data-section="${currentSection}"]`).forEach(s => s.classList.add('active'));
+    // Redraw charts in newly visible section
+    updateAll();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// Master Update
+// ═══════════════════════════════════════════════
 function updateAll() {
   const { sp, nq, dv } = currentWeights;
-
-  // Compute portfolio
   const monthlyRets = monthlyPortfolioReturns(sp, nq, dv);
   const cumData = cumulativeFromReturns(monthlyRets);
   const annRet = annualizedReturn(monthlyRets);
   const annVol = annualizedVolatility(monthlyRets);
-  const mdd = maxDrawdown(monthlyRets);
+  const mdd = maxDrawdownFromRets(monthlyRets);
   const sr = sharpeRatio(annRet, annVol);
 
-  // Update metrics
+  // Metrics
   updateMetrics(annRet, annVol, mdd, sr);
 
-  // Compute rolling windows
-  const rolling5y = computeRolling(monthlyRets, 60);
-  const rolling10y = computeRolling(monthlyRets, 120);
+  // Overview section
+  if (currentSection === 'overview') {
+    updateCumChart(monthlyRets, cumData);
+    updateYearlyTable();
+  }
 
-  // Update window table
-  updateWindowTable(rolling5y, rolling10y);
+  // Returns section
+  if (currentSection === 'returns') {
+    updateRollingChart(monthlyRets);
+    updateFrontierChart(annRet, annVol);
+  }
 
-  // Update charts
-  updateRollingChart(rolling5y, rolling10y);
-  updateCumChart(monthlyRets, cumData);
-  updateFrontierChart();
+  // Risk section
+  if (currentSection === 'risk') {
+    updateDrawdownChart(monthlyRets);
+  }
+
+  // Compare section
+  if (currentSection === 'compare') {
+    updateRebalanceChart();
+    updateCompareTable();
+  }
+
+  // Window table always visible (left panel)
+  updateWindowTable(monthlyRets);
 }
 
+// ═══════════════════════════════════════════════
+// Metrics
+// ═══════════════════════════════════════════════
 function updateMetrics(annRet, annVol, mdd, sr) {
   const fmtPct = (v) => (v * 100).toFixed(2) + '%';
-  const fmtNum = (v) => v.toFixed(2);
-
   const setEl = (id, val, cls) => {
-    const el = document.getElementById(id);
-    el.textContent = val;
-    el.className = 'value ' + (cls || '');
+    const el = document.getElementById(id); el.textContent = val; el.className = 'value ' + (cls || '');
   };
-
   setEl('metricReturn', fmtPct(annRet), annRet > 0.1 ? 'good' : annRet > 0.05 ? 'warn' : 'bad');
   setEl('metricVol', fmtPct(annVol));
   setEl('metricMDD', fmtPct(mdd), mdd > -0.3 ? 'good' : mdd > -0.5 ? 'warn' : 'bad');
-  setEl('metricSharpe', fmtNum(sr), sr > 0.8 ? 'good' : sr > 0.4 ? 'warn' : 'bad');
+  setEl('metricSharpe', sr.toFixed(2), sr > 0.8 ? 'good' : sr > 0.4 ? 'warn' : 'bad');
 }
 
-function updateWindowTable(rolling5y, rolling10y) {
-  const formatWindow = (windows) => {
-    if (windows.length === 0) return { mean: 0, median: 0, min: 0, max: 0 };
-    const rets = windows.map(w => w.ann_ret);
-    rets.sort((a, b) => a - b);
-    const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
-    const median = rets[Math.floor(rets.length / 2)];
-    return { mean, median, min: rets[0], max: rets[rets.length - 1] };
+// ═══════════════════════════════════════════════
+// Window Table
+// ═══════════════════════════════════════════════
+function updateWindowTable(monthlyRets) {
+  const rolling5y = computeRolling(monthlyRets, 60);
+  const rolling10y = computeRolling(monthlyRets, 120);
+  const fmtW = (w) => {
+    if (!w.length) return { mean: 0, median: 0, min: 0, max: 0 };
+    const rets = w.map(x => x.ann_ret).sort((a, b) => a - b);
+    return { mean: rets.reduce((a, b) => a + b, 0) / rets.length, median: rets[Math.floor(rets.length / 2)], min: rets[0], max: rets[rets.length - 1] };
   };
-
-  const f5 = formatWindow(rolling5y);
-  const f10 = formatWindow(rolling10y);
+  const f5 = fmtW(rolling5y), f10 = fmtW(rolling10y);
   const fmtPct = (v) => (v * 100).toFixed(2) + '%';
-
-  const tbody = document.getElementById('windowTableBody');
-  tbody.innerHTML = `
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:6px 4px;"><strong>5年</strong></td>
-      <td style="text-align:right;padding:6px 4px;color:#059669;font-weight:600;">${fmtPct(f5.mean)}</td>
-      <td style="text-align:right;padding:6px 4px;">${fmtPct(f5.median)}</td>
-      <td style="text-align:right;padding:6px 4px;color:#dc2626;">${fmtPct(f5.min)}</td>
-      <td style="text-align:right;padding:6px 4px;color:#2563eb;">${fmtPct(f5.max)}</td>
-      <td style="text-align:right;padding:6px 4px;color:var(--text-secondary);">${rolling5y.length}</td>
-    </tr>
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:6px 4px;"><strong>10年</strong></td>
-      <td style="text-align:right;padding:6px 4px;color:#059669;font-weight:600;">${fmtPct(f10.mean)}</td>
-      <td style="text-align:right;padding:6px 4px;">${fmtPct(f10.median)}</td>
-      <td style="text-align:right;padding:6px 4px;color:#dc2626;">${fmtPct(f10.min)}</td>
-      <td style="text-align:right;padding:6px 4px;color:#2563eb;">${fmtPct(f10.max)}</td>
-      <td style="text-align:right;padding:6px 4px;color:var(--text-secondary);">${rolling10y.length}</td>
-    </tr>
-    <tr>
-      <td style="padding:6px 4px;"><strong>20年</strong></td>
-      <td colspan="5" style="padding:6px 4px;color:var(--text-secondary);text-align:center;">
-        数据不足 (仅14.2年，需≥20年数据)
-      </td>
-    </tr>
+  document.getElementById('windowTableBody').innerHTML = `
+    <tr><td style="padding:4px;"><strong>5年</strong></td><td style="text-align:right;padding:4px;color:#059669;font-weight:600;">${fmtPct(f5.mean)}</td><td style="text-align:right;padding:4px;">${fmtPct(f5.median)}</td><td style="text-align:right;padding:4px;color:#dc2626;">${fmtPct(f5.min)}</td><td style="text-align:right;padding:4px;color:#2563eb;">${fmtPct(f5.max)}</td></tr>
+    <tr><td style="padding:4px;"><strong>10年</strong></td><td style="text-align:right;padding:4px;color:#059669;font-weight:600;">${fmtPct(f10.mean)}</td><td style="text-align:right;padding:4px;">${fmtPct(f10.median)}</td><td style="text-align:right;padding:4px;color:#dc2626;">${fmtPct(f10.min)}</td><td style="text-align:right;padding:4px;color:#2563eb;">${fmtPct(f10.max)}</td></tr>
+    <tr><td style="padding:4px;"><strong>20年</strong></td><td colspan="4" style="padding:4px;color:var(--text-secondary);text-align:center;">数据不足 (仅14.2年)</td></tr>
   `;
 }
 
-// ── Charts ──
-function updateRollingChart(rolling5y, rolling10y) {
-  const ctx = document.getElementById('rollingChart').getContext('2d');
-
-  const labels5y = rolling5y.map(w => w.start.substring(0, 7));
-  const labels10y = rolling10y.map(w => w.start.substring(0, 7));
-
-  // Use a combined label set
-  const allLabels = [...new Set([...labels5y, ...labels10y])].sort();
-
-  const data5y = allLabels.map(l => {
-    const idx = labels5y.indexOf(l);
-    return idx >= 0 ? rolling5y[idx].ann_ret * 100 : null;
-  });
-  const data10y = allLabels.map(l => {
-    const idx = labels10y.indexOf(l);
-    return idx >= 0 ? rolling10y[idx].ann_ret * 100 : null;
-  });
-
-  if (charts.rolling) charts.rolling.destroy();
-
-  charts.rolling = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: allLabels,
-      datasets: [
-        {
-          label: '5年期年化收益',
-          data: data5y,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37,99,235,0.08)',
-          borderWidth: 2,
-          pointRadius: 1.5,
-          pointHoverRadius: 5,
-          fill: false,
-          tension: 0.1,
-        },
-        {
-          label: '10年期年化收益',
-          data: data10y,
-          borderColor: '#7c3aed',
-          backgroundColor: 'rgba(124,58,237,0.08)',
-          borderWidth: 2,
-          pointRadius: 1.5,
-          pointHoverRadius: 5,
-          fill: false,
-          tension: 0.1,
-          borderDash: [6, 3],
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { intersect: false, mode: 'index' },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%`
-          }
-        },
-        legend: { position: 'top' }
-      },
-      scales: {
-        y: {
-          ticks: { callback: (v) => v.toFixed(1) + '%' },
-          title: { display: true, text: '年化收益' }
-        }
-      }
-    }
-  });
-}
-
+// ═══════════════════════════════════════════════
+// Charts: Cumulative Returns + DCA
+// ═══════════════════════════════════════════════
 function updateCumChart(monthlyRets, cumData) {
-  const ctx = document.getElementById('cumChart').getContext('2d');
+  const ctx = document.getElementById('cumChart')?.getContext('2d');
+  if (!ctx) return;
 
-  // Also compute cumulative for 100% each asset
   const sp100 = cumulativeFromReturns(monthlyPortfolioReturns(1, 0, 0));
   const nq100 = cumulativeFromReturns(monthlyPortfolioReturns(0, 1, 0));
   const dv100 = cumulativeFromReturns(monthlyPortfolioReturns(0, 0, 1));
-
   const labels = cumData.map(d => d.date.substring(0, 7));
+
+  // If initial capital or DCA is set, show absolute values for comparability
+  const showAbsolute = initialCapital > 0 || (dcaEnabled && dcaAmount > 0);
+  const totalLump = initialCapital > 0 ? initialCapital : 1;
+  const scale = showAbsolute && initialCapital > 0 ? initialCapital : 1;
+  const yLabel = showAbsolute ? '组合价值 (元, 对数尺度)' : '累计倍数 (对数尺度)';
+  const tooltipFmt = showAbsolute ? (v) => {
+    if (v >= 10000) return (v / 10000).toFixed(1) + '万';
+    return v.toFixed(0) + '元';
+  } : (v) => v.toFixed(2) + 'x';
+
+  const datasets = [
+    {
+      label: `当前配置 ${fmtWeights()} (一次性${initialCapital > 0 ? ' ' + initialCapital.toLocaleString() + '元' : ''})`,
+      data: cumData.map(d => d.cum * (initialCapital > 0 ? initialCapital : 1)),
+      borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.06)', borderWidth: 3, pointRadius: 0, fill: false,
+    },
+    {
+      label: '100% 标普500', data: sp100.map(d => d.cum * scale),
+      borderColor: '#2563eb', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4, 4],
+    },
+    {
+      label: '100% 纳斯达克100', data: nq100.map(d => d.cum * scale),
+      borderColor: '#7c3aed', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4, 4],
+    },
+    {
+      label: '100% 红利低波', data: dv100.map(d => d.cum * scale),
+      borderColor: '#dc2626', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [4, 4],
+    },
+  ];
+
+  // Add DCA line if enabled
+  if (dcaEnabled && dcaAmount > 0) {
+    const dc = simulateDCA(monthlyRets, dcaAmount, currentWeights, initialCapital);
+    datasets.unshift({
+      label: `定投 ${dcaAmount.toLocaleString()}元/月${initialCapital > 0 ? ' (初始' + initialCapital.toLocaleString() + '元)' : ''}`,
+      data: dc.map(d => d.portfolioValue),
+      borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.06)', borderWidth: 3, pointRadius: 0, fill: false,
+    });
+  }
 
   if (charts.cum) charts.cum.destroy();
 
   charts.cum = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: `当前配置 (${fmtWeights()})`,
-          data: cumData.map(d => d.cum),
-          borderColor: '#059669',
-          backgroundColor: 'rgba(5,150,105,0.08)',
-          borderWidth: 3,
-          pointRadius: 0,
-          fill: false,
-        },
-        {
-          label: '100% 标普500',
-          data: sp100.map(d => d.cum),
-          borderColor: '#2563eb',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          borderDash: [4, 4],
-        },
-        {
-          label: '100% 纳斯达克100',
-          data: nq100.map(d => d.cum),
-          borderColor: '#7c3aed',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          borderDash: [4, 4],
-        },
-        {
-          label: '100% 红利低波',
-          data: dv100.map(d => d.cum),
-          borderColor: '#dc2626',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          borderDash: [4, 4],
-        }
-      ]
-    },
+    type: 'line', data: { labels, datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       interaction: { intersect: false, mode: 'index' },
       plugins: {
-        tooltip: {
-          callbacks: {
-            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}x`
-          }
-        },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${tooltipFmt(c.parsed.y)}` } },
         legend: { position: 'top' }
       },
       scales: {
-        y: {
-          type: 'logarithmic',
-          title: { display: true, text: '累计倍数 (对数尺度)' },
-          ticks: { callback: (v) => v.toFixed(1) + 'x' }
-        }
+        y: { type: 'logarithmic', title: { display: true, text: yLabel }, ticks: { callback: (v) => tooltipFmt(v) } }
       }
     }
   });
 }
 
-function updateFrontierChart() {
-  const ctx = document.getElementById('frontierChart').getContext('2d');
+// ═══════════════════════════════════════════════
+// Charts: Rolling Returns
+// ═══════════════════════════════════════════════
+function updateRollingChart(monthlyRets) {
+  const ctx = document.getElementById('rollingChart')?.getContext('2d');
+  if (!ctx) return;
 
-  // Parse all pre-computed portfolios
+  const r5 = computeRolling(monthlyRets, 60);
+  const r10 = computeRolling(monthlyRets, 120);
+  const labels5 = r5.map(w => w.start.substring(0, 7));
+  const labels10 = r10.map(w => w.start.substring(0, 7));
+  const allLabels = [...new Set([...labels5, ...labels10])].sort();
+
+  if (charts.rolling) charts.rolling.destroy();
+
+  charts.rolling = new Chart(ctx, {
+    type: 'line', data: {
+      labels: allLabels,
+      datasets: [
+        { label: '5年期年化收益', data: allLabels.map(l => { const i = labels5.indexOf(l); return i >= 0 ? r5[i].ann_ret * 100 : null; }), borderColor: '#2563eb', borderWidth: 2, pointRadius: 1.5, pointHoverRadius: 5, fill: false, tension: 0.1 },
+        { label: '10年期年化收益', data: allLabels.map(l => { const i = labels10.indexOf(l); return i >= 0 ? r10[i].ann_ret * 100 : null; }), borderColor: '#7c3aed', borderWidth: 2, pointRadius: 1.5, pointHoverRadius: 5, fill: false, tension: 0.1, borderDash: [6, 3] },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y?.toFixed(2) ?? 'N/A'}%` } }, legend: { position: 'top' } },
+      scales: { y: { ticks: { callback: (v) => v.toFixed(1) + '%' }, title: { display: true, text: '年化收益' } } }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// Charts: Drawdown
+// ═══════════════════════════════════════════════
+function updateDrawdownChart(monthlyRets) {
+  const ctx = document.getElementById('drawdownChart')?.getContext('2d');
+  if (!ctx) return;
+
+  const ddSeries = drawdownSeries(monthlyRets);
+  const labels = ddSeries.map(d => d.date.substring(0, 7));
+  const ddValues = ddSeries.map(d => d.dd * 100);
+
+  // Also show individual asset drawdowns for comparison
+  const spDD = drawdownSeries(monthlyPortfolioReturns(1, 0, 0)).map(d => d.dd * 100);
+  const nqDD = drawdownSeries(monthlyPortfolioReturns(0, 1, 0)).map(d => d.dd * 100);
+  const dvDD = drawdownSeries(monthlyPortfolioReturns(0, 0, 1)).map(d => d.dd * 100);
+
+  if (charts.drawdown) charts.drawdown.destroy();
+
+  charts.drawdown = new Chart(ctx, {
+    type: 'line', data: {
+      labels,
+      datasets: [
+        { label: `当前配置 ${fmtWeights()}`, data: ddValues, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.15)', borderWidth: 2.5, pointRadius: 0, fill: true, tension: 0.1 },
+        { label: '标普500', data: spDD, borderColor: '#2563eb', borderWidth: 1.2, pointRadius: 0, fill: false, borderDash: [3, 3], tension: 0.1 },
+        { label: '纳斯达克100', data: nqDD, borderColor: '#7c3aed', borderWidth: 1.2, pointRadius: 0, fill: false, borderDash: [3, 3], tension: 0.1 },
+        { label: '红利低波', data: dvDD, borderColor: '#dc2626', borderWidth: 1.2, pointRadius: 0, fill: false, borderDash: [3, 3], tension: 0.1 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}%` } },
+        legend: { position: 'top' }
+      },
+      scales: {
+        y: { reverse: true, ticks: { callback: (v) => v.toFixed(0) + '%' }, title: { display: true, text: '回撤幅度' }, max: 0 }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// Charts: Rebalancing Comparison
+// ═══════════════════════════════════════════════
+function updateRebalanceChart() {
+  const ctx = document.getElementById('rebalanceChart')?.getContext('2d');
+  if (!ctx) return;
+
+  const monthlyRets = monthlyPortfolioReturns(currentWeights.sp, currentWeights.nq, currentWeights.dv);
+
+  const none = simulateRebalancing(monthlyRets, currentWeights, 'none', dcaEnabled ? dcaAmount : 0, initialCapital);
+  const annual = simulateRebalancing(monthlyRets, currentWeights, 'annual', dcaEnabled ? dcaAmount : 0, initialCapital);
+  const threshold = simulateRebalancing(monthlyRets, currentWeights, 'threshold5', dcaEnabled ? dcaAmount : 0, initialCapital);
+  const labels = none.map(d => d.date.substring(0, 7));
+
+  const makeData = (sim) => sim.map(d => d.portfolioValue);
+
+  if (charts.rebalance) charts.rebalance.destroy();
+
+  charts.rebalance = new Chart(ctx, {
+    type: 'line', data: {
+      labels,
+      datasets: [
+        { label: '每年再平衡', data: makeData(annual), borderColor: '#2563eb', borderWidth: 2.5, pointRadius: 0, fill: false },
+        { label: '偏离5%触发', data: makeData(threshold), borderColor: '#059669', borderWidth: 2.5, pointRadius: 0, fill: false },
+        { label: '不调仓', data: makeData(none), borderColor: '#94a3b8', borderWidth: 1.5, pointRadius: 0, fill: false, borderDash: [5, 5] },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(2)} 元` } },
+        legend: { position: 'top' }
+      },
+      scales: {
+        y: { type: 'logarithmic', title: { display: true, text: '组合价值 (元, 对数尺度)' }, ticks: { callback: (v) => v >= 1000 ? (v / 10000).toFixed(1) + '万' : v.toFixed(0) } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// Charts: Efficient Frontier
+// ═══════════════════════════════════════════════
+function updateFrontierChart(annRet, annVol) {
+  const ctx = document.getElementById('frontierChart')?.getContext('2d');
+  if (!ctx) return;
+
   const portfolios = Object.values(precomputed);
-
-  // Current portfolio stats
-  const { sp, nq, dv } = currentWeights;
-  const monthlyRets = monthlyPortfolioReturns(sp, nq, dv);
-  const annRet = annualizedReturn(monthlyRets);
-  const annVol = annualizedVolatility(monthlyRets);
-  const mdd = maxDrawdown(monthlyRets);
-  const sr = sharpeRatio(annRet, annVol);
-
-  // Scatter: all portfolios
-  const points = portfolios.map(p => ({
-    x: p.vol * 100,
-    y: p.ret * 100,
-    label: `${p.sp}%/${p.nq}%/${p.dv}%`
-  }));
-
-  // Compute efficient frontier (non-dominated)
+  const points = portfolios.map(p => ({ x: p.vol * 100, y: p.ret * 100, label: `${p.sp}%/${p.nq}%/${p.dv}%` }));
   const sorted = [...points].sort((a, b) => a.x - b.x);
   const frontier = [];
   let maxY = -Infinity;
-  for (const p of sorted) {
-    if (p.y > maxY) {
-      maxY = p.y;
-      frontier.push(p);
-    }
-  }
-  // Also add points with high return that aren't the max vol for that return
-  const sortedByRet = [...points].sort((a, b) => b.y - a.y);
+  for (const p of sorted) { if (p.y > maxY) { maxY = p.y; frontier.push(p); } }
   const frontierSet = new Set(frontier.map(p => `${p.x},${p.y}`));
+  const sortedByRet = [...points].sort((a, b) => b.y - a.y);
   let minVol = Infinity;
   for (const p of sortedByRet) {
-    if (p.x < minVol) {
-      minVol = p.x;
-      if (!frontierSet.has(`${p.x},${p.y}`)) {
-        frontier.push(p);
-        frontierSet.add(`${p.x},${p.y}`);
-      }
-    }
+    if (p.x < minVol && !frontierSet.has(`${p.x},${p.y}`)) { minVol = p.x; frontier.push(p); frontierSet.add(`${p.x},${p.y}`); }
   }
   frontier.sort((a, b) => a.x - b.x);
 
   if (charts.frontier) charts.frontier.destroy();
 
   charts.frontier = new Chart(ctx, {
-    type: 'scatter',
-    data: {
+    type: 'scatter', data: {
       datasets: [
-        {
-          label: '所有组合 (231个)',
-          data: points,
-          backgroundColor: 'rgba(148,163,184,0.4)',
-          pointRadius: 3,
-          pointHoverRadius: 6,
-        },
-        {
-          label: '有效前沿',
-          data: frontier,
-          borderColor: '#059669',
-          backgroundColor: '#059669',
-          pointRadius: 4,
-          pointHoverRadius: 7,
-          showLine: true,
-          borderWidth: 2,
-        },
-        {
-          label: `当前: ${fmtWeights()}`,
-          data: [{ x: annVol * 100, y: annRet * 100 }],
-          backgroundColor: '#dc2626',
-          borderColor: '#dc2626',
-          pointRadius: 8,
-          pointHoverRadius: 10,
-          pointStyle: 'star',
-        }
+        { label: '所有组合 (231个)', data: points, backgroundColor: 'rgba(148,163,184,0.35)', pointRadius: 3, pointHoverRadius: 6 },
+        { label: '有效前沿', data: frontier, borderColor: '#059669', backgroundColor: '#059669', pointRadius: 4, pointHoverRadius: 7, showLine: true, borderWidth: 2 },
+        { label: `当前: ${fmtWeights()}`, data: [{ x: annVol * 100, y: annRet * 100 }], backgroundColor: '#dc2626', borderColor: '#dc2626', pointRadius: 8, pointStyle: 'star' },
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: {
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              if (ctx.dataset.label.startsWith('当前')) {
-                return `当前: 收益 ${ctx.parsed.y.toFixed(2)}%, 波动 ${ctx.parsed.x.toFixed(2)}%`;
-              }
-              const p = points[ctx.dataIndex];
-              if (!p) return '';
-              return `${p.label}: 收益 ${p.y.toFixed(2)}%, 波动 ${p.x.toFixed(2)}%`;
-            }
-          }
-        },
+        tooltip: { callbacks: { label: (c) => { const p = points[c.dataIndex]; return p ? `${p.label}: 收益 ${p.y.toFixed(2)}%, 波动 ${p.x.toFixed(2)}%` : `当前: 收益 ${c.parsed.y.toFixed(2)}%, 波动 ${c.parsed.x.toFixed(2)}%`; } } },
         legend: { position: 'top' }
       },
-      scales: {
-        x: {
-          title: { display: true, text: '年化波动率 (%)' }
-        },
-        y: {
-          title: { display: true, text: '年化收益 (%)' },
-          ticks: { callback: (v) => v.toFixed(1) + '%' }
-        }
-      }
+      scales: { x: { title: { display: true, text: '年化波动率 (%)' } }, y: { title: { display: true, text: '年化收益 (%)' }, ticks: { callback: (v) => v.toFixed(1) + '%' } } }
     }
   });
 }
 
+// ═══════════════════════════════════════════════
+// Yearly Returns Table
+// ═══════════════════════════════════════════════
+function updateYearlyTable() {
+  const tbody = document.getElementById('yearlyTable');
+  if (!tbody) return;
+
+  const data = computeAssetYearlyReturns();
+  const fmt = (v) => { const pct = (v * 100).toFixed(1); const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : ''; return `<span class="${cls}">${v >= 0 ? '+' : ''}${pct}%</span>`; };
+
+  tbody.innerHTML = `
+    <thead><tr>
+      <th style="text-align:left;">年份</th><th>标普500</th><th>纳斯达克100</th><th>红利低波</th><th>组合 ${fmtWeights()}</th>
+    </tr></thead>
+    <tbody>${data.map(d => `
+      <tr>
+        <td class="year-col">${d.year}</td>
+        <td>${fmt(d.sp)}</td>
+        <td>${fmt(d.nq)}</td>
+        <td>${fmt(d.dv)}</td>
+        <td>${fmt(d.port)}</td>
+      </tr>
+    `).join('')}</tbody>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+// Compare Table
+// ═══════════════════════════════════════════════
+function updateCompareTable() {
+  const tbody = document.getElementById('compareTable');
+  if (!tbody) return;
+
+  const monthlyRets = monthlyPortfolioReturns(currentWeights.sp, currentWeights.nq, currentWeights.dv);
+  const strategies = {
+    'annual': simulateRebalancing(monthlyRets, currentWeights, 'annual', dcaEnabled ? dcaAmount : 0, initialCapital),
+    'threshold5': simulateRebalancing(monthlyRets, currentWeights, 'threshold5', dcaEnabled ? dcaAmount : 0, initialCapital),
+    'none': simulateRebalancing(monthlyRets, currentWeights, 'none', dcaEnabled ? dcaAmount : 0, initialCapital),
+  };
+
+  const computeMetrics = (sim) => {
+    const rets = [];
+    for (let i = 1; i < sim.length; i++) {
+      rets.push({ date: sim[i].date, ret: (sim[i].portfolioValue / sim[i - 1].portfolioValue) - 1 });
+    }
+    const annRet = annualizedReturn(rets);
+    const annVol = annualizedVolatility(rets);
+    const mddVal = maxDrawdownFromRets(rets);
+    const sr = sharpeRatio(annRet, annVol);
+    const finalVal = sim[sim.length - 1].portfolioValue;
+    const totalInvested = sim[sim.length - 1].totalInvested;
+    const totalReturn = (finalVal - totalInvested) / totalInvested;
+    return { annRet, annVol, mdd: mddVal, sr, finalVal, totalInvested, totalReturn };
+  };
+
+  const metrics = {};
+  for (const [k, v] of Object.entries(strategies)) metrics[k] = computeMetrics(v);
+
+  const names = { annual: '每年再平衡', threshold5: '偏离5%触发', none: '不调仓' };
+  const fmtPct = (v) => (v * 100).toFixed(2) + '%';
+  const fmtMoney = (v) => v >= 10000 ? (v / 10000).toFixed(1) + '万' : v.toFixed(0);
+
+  tbody.innerHTML = `
+    <thead><tr><th>策略</th><th style="text-align:right;">年化收益</th><th style="text-align:right;">波动率</th><th style="text-align:right;">最大回撤</th><th style="text-align:right;">夏普比率</th><th style="text-align:right;">总投入</th><th style="text-align:right;">最终价值</th><th style="text-align:right;">总收益率</th></tr></thead>
+    <tbody>${Object.entries(metrics).map(([k, m]) => `
+      <tr>
+        <td><strong>${names[k]}</strong></td>
+        <td style="color:#059669;font-weight:600;">${fmtPct(m.annRet)}</td>
+        <td>${fmtPct(m.annVol)}</td>
+        <td style="color:#dc2626;">${fmtPct(m.mdd)}</td>
+        <td>${m.sr.toFixed(2)}</td>
+        <td>${fmtMoney(m.totalInvested)}</td>
+        <td style="font-weight:600;">${fmtMoney(m.finalVal)}</td>
+        <td style="color:#059669;font-weight:600;">${fmtPct(m.totalReturn)}</td>
+      </tr>
+    `).join('')}</tbody>
+  `;
+}
+
 function fmtWeights() {
-  const { sp, nq, dv } = currentWeights;
-  return `${(sp*100).toFixed(0)}/${(nq*100).toFixed(0)}/${(dv*100).toFixed(0)}`;
+  return `${(currentWeights.sp * 100).toFixed(0)}/${(currentWeights.nq * 100).toFixed(0)}/${(currentWeights.dv * 100).toFixed(0)}`;
 }
 
 // ── Start ──
