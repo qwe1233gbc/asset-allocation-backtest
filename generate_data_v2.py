@@ -10,10 +10,31 @@ Funds:
   - DivLowVol: 红利低波ETF (512890), since 2018-12-19 (shorter, use index+fees for earlier)
 """
 
-import json, time
+import json, time, os
 import akshare as ak
 import pandas as pd
 import numpy as np
+import urllib.request
+
+# ── Anti-proxy patch for Chinese network environment ──
+for _key in list(os.environ.keys()):
+    if 'proxy' in _key.lower():
+        os.environ.pop(_key, None)
+
+# Monkey-patch akshare's requests session to disable proxy
+import requests as _requests
+_original_session = _requests.Session
+class _NoProxySession(_original_session):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.trust_env = False
+_requests.Session = _NoProxySession
+# Also patch any existing session classes in akshare
+try:
+    import requests.sessions
+    requests.sessions.Session = _NoProxySession
+except:
+    pass
 
 # ── Config ──
 SP500_SYMBOL = ".INX"
@@ -42,6 +63,26 @@ FEE_MODEL = {
 OUTPUT = "backtest_data_v2.json"
 
 
+def fetch_divlow_direct():
+    """Fetch CSI Dividend LowVol via direct East Money API (bypass proxy)."""
+    url = ('https://push2his.eastmoney.com/api/qt/stock/kline/get'
+           '?secid=1.000015'
+           '&fields1=f1,f2,f3,f4,f5,f6'
+           '&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61'
+           '&klt=101&fqt=1&beg=20000101&end=20260522')
+    req = urllib.request.Request(url, headers={
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://data.eastmoney.com/',
+    })
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read())
+    klines = data['data']['klines']
+    rows = [{'date': k.split(',')[0], 'close': float(k.split(',')[2])} for k in klines]
+    df = pd.DataFrame(rows)
+    df['date'] = pd.to_datetime(df['date'])
+    return df
+
+
 def fetch_index_data():
     """Fetch index price data for all three indices."""
     print("Fetching SP500 index...")
@@ -57,11 +98,16 @@ def fetch_index_data():
 
     time.sleep(1)
     print("Fetching CSI Dividend LowVol...")
-    divlow = ak.index_zh_a_hist(symbol=DIVLOW_SYMBOL, period="monthly",
-                                 start_date="20000101", end_date="20301231")
-    divlow = divlow[["日期", "收盘"]].copy()
-    divlow.columns = ["date", "divlow_price"]
-    divlow["date"] = pd.to_datetime(divlow["date"])
+    try:
+        divlow = ak.index_zh_a_hist(symbol=DIVLOW_SYMBOL, period="monthly",
+                                     start_date="20000101", end_date="20301231")
+        divlow = divlow[["日期", "收盘"]].copy()
+        divlow.columns = ["date", "divlow_price"]
+        divlow["date"] = pd.to_datetime(divlow["date"])
+    except Exception as e:
+        print(f"  akshare failed ({e}), using direct API fallback...")
+        divlow = fetch_divlow_direct()
+        divlow.columns = ["date", "divlow_price"]
 
     # Merge
     df = sp500.merge(nasdaq, on="date", how="inner")
