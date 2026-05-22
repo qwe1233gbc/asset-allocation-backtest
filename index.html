@@ -421,7 +421,7 @@ const MONTHLY_FEE_DRAG = 0.0085 / 12; // management 0.6% + custody 0.25% = 0.85%
 // ═══════════════════════════════════════════════
 async function loadData() {
   try {
-    const resp = await fetch('backtest_data_v2.json');
+    const resp = await fetch('backtest_data.json');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     monthlyData = data.monthly_data;
@@ -429,11 +429,11 @@ async function loadData() {
     metadata = data.metadata;
     document.getElementById('loading').style.display = 'none';
     document.getElementById('dataInfo').textContent =
-      `${metadata.data_start} → ${metadata.data_end} · ${metadata.n_months}个月 · ${metadata.n_years}年 · 含费率模型`;
+      `${metadata.data_start} → ${metadata.data_end} · ${metadata.n_months}个月 · ${metadata.n_years}年 · 含股息再投资`;
     initApp();
   } catch (err) {
     document.getElementById('loading').innerHTML =
-      `<div class="error-toast">数据加载失败: ${err.message}<br>请确保 backtest_data_v2.json 与 index.html 在同一目录<br>或运行 python enhance_data.py 生成数据</div>`;
+      `<div class="error-toast">数据加载失败: ${err.message}<br>请确保 backtest_data.json 与 index.html 在同一目录<br>或运行 python enhance_data.py 生成数据</div>`;
   }
 }
 
