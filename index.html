@@ -291,6 +291,22 @@
       </div>
     </div>
 
+    <!-- Fee Info -->
+    <div class="card" style="font-size:0.78rem;color:var(--text-secondary);">
+      <div class="card-title">费率模型 <span style="color:#059669;font-weight:600;">已启用</span></div>
+      <div style="margin-bottom:2px;">管理费 0.6%/年 + 托管费 0.25%/年</div>
+      <div style="margin-bottom:2px;">申购费 0.12% (支付宝1折)</div>
+      <div style="margin-bottom:2px;">赎回费: 7天内1.5% / 1年内0.5% / 1年+免费</div>
+      <div style="margin-top:6px;font-size:0.73rem;">
+        基金净值阶段(2012/2018起)已含实际费费；
+        指数阶段已扣月均0.071%费费拖累。
+      </div>
+      <div style="margin-top:6px;font-size:0.73rem;color:#f59e0b;">
+        ⚠ 定投每一笔扣除0.12%申购费；
+        再平衡卖出部分扣除对应赎回费。
+      </div>
+    </div>
+
     <!-- Metrics Cards -->
     <div class="card">
       <div class="card-title">关键指标 (2005-2026全周期)</div>
@@ -390,12 +406,22 @@ let initialCapital = 0;
 let rebalanceStrategy = 'annual';
 let currentSection = 'overview';
 
+// Fee model constants (Alipay QDII rates)
+const SUBSCRIPTION_FEE = 0.0012;     // 0.12% (1折)
+const REDEMPTION_FEE_TIERS = [       // [max_days, rate]
+  [7, 0.015],    // <7d: 1.5%
+  [365, 0.005],  // 7d-1y: 0.5%
+  [99999, 0.0]   // >1y: free
+];
+const MONTHLY_FEE_DRAG = 0.0085 / 12; // management 0.6% + custody 0.25% = 0.85%/yr
+// Note: fund NAV periods already include real fees; index periods get fee drag applied in the data
+
 // ═══════════════════════════════════════════════
 // Data Loading
 // ═══════════════════════════════════════════════
 async function loadData() {
   try {
-    const resp = await fetch('backtest_data.json');
+    const resp = await fetch('backtest_data_v2.json');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     monthlyData = data.monthly_data;
@@ -403,11 +429,11 @@ async function loadData() {
     metadata = data.metadata;
     document.getElementById('loading').style.display = 'none';
     document.getElementById('dataInfo').textContent =
-      `${metadata.data_start} → ${metadata.data_end} · ${metadata.n_months}个月 · ${metadata.n_years}年`;
+      `${metadata.data_start} → ${metadata.data_end} · ${metadata.n_months}个月 · ${metadata.n_years}年 · 含费率模型`;
     initApp();
   } catch (err) {
     document.getElementById('loading').innerHTML =
-      `<div class="error-toast">数据加载失败: ${err.message}<br>请确保 backtest_data.json 与 index.html 在同一目录</div>`;
+      `<div class="error-toast">数据加载失败: ${err.message}<br>请确保 backtest_data_v2.json 与 index.html 在同一目录<br>或运行 python enhance_data.py 生成数据</div>`;
   }
 }
 
@@ -500,15 +526,16 @@ function simulateDCA(monthlyRets, monthlyContribution, weights, initialCapital =
     nqPrice *= (1 + nq100[i].ret);
     dvPrice *= (1 + dv100[i].ret);
 
-    // Buy with monthly contribution
+    // Buy with monthly contribution (net of subscription fee)
     if (monthlyContribution > 0) {
-      const spBuy = (monthlyContribution * sp) / spPrice;
-      const nqBuy = (monthlyContribution * nq) / nqPrice;
-      const dvBuy = (monthlyContribution * dv) / dvPrice;
+      const netContribution = monthlyContribution * (1 - SUBSCRIPTION_FEE);
+      const spBuy = (netContribution * sp) / spPrice;
+      const nqBuy = (netContribution * nq) / nqPrice;
+      const dvBuy = (netContribution * dv) / dvPrice;
       spShares += spBuy;
       nqShares += nqBuy;
       dvShares += dvBuy;
-      totalInvested += monthlyContribution;
+      totalInvested += monthlyContribution; // track gross invested for return calculation
     }
 
     const portfolioValue = spShares * spPrice + nqShares * nqPrice + dvShares * dvPrice;
@@ -551,12 +578,13 @@ function simulateRebalancing(monthlyRets, weights, strategy, monthlyContribution
     price[1] *= (1 + nq100[i].ret);
     price[2] *= (1 + dv100[i].ret);
 
-    // DCA contribution
+    // DCA contribution (net of subscription fee)
     if (monthlyContribution > 0) {
-      shares[0] += (monthlyContribution * w[0]) / price[0];
-      shares[1] += (monthlyContribution * w[1]) / price[1];
-      shares[2] += (monthlyContribution * w[2]) / price[2];
-      totalInvested += monthlyContribution;
+      const netContribution = monthlyContribution * (1 - SUBSCRIPTION_FEE);
+      shares[0] += (netContribution * w[0]) / price[0];
+      shares[1] += (netContribution * w[1]) / price[1];
+      shares[2] += (netContribution * w[2]) / price[2];
+      totalInvested += monthlyContribution; // gross tracking
     }
 
     const totalValue = shares[0] * price[0] + shares[1] * price[1] + shares[2] * price[2];
@@ -578,10 +606,35 @@ function simulateRebalancing(monthlyRets, weights, strategy, monthlyContribution
 
     if (didRebalance) {
       lastRebalanceMonth = i;
-      // Redistribute to target weights
-      for (let j = 0; j < 3; j++) {
-        shares[j] = (totalValue * w[j]) / price[j];
+      // Calculate months since last rebalance for redemption fee tier
+      const monthsSinceLastRebalance = i - lastRebalanceMonth;
+      // Find applicable redemption fee rate based on holding period
+      let redemptionFeeRate = 0.01; // default ~0.5%
+      // Simplified: assume oldest shares held >1yr, use 0% for annual rebalance
+      // For threshold5, use tiered approach based on time since last rebalance
+      if (strategy === 'annual') {
+        redemptionFeeRate = 0.0; // annual rebalancing, most shares held >1yr
+      } else if (strategy === 'threshold5') {
+        if (monthsSinceLastRebalance < 1) redemptionFeeRate = 0.015;
+        else if (monthsSinceLastRebalance < 12) redemptionFeeRate = 0.005;
+        else redemptionFeeRate = 0.0;
       }
+      // Apply redemption fee on sold portions
+      const targetValues = [totalValue * w[0], totalValue * w[1], totalValue * w[2]];
+      const currentValues = [shares[0] * price[0], shares[1] * price[1], shares[2] * price[2]];
+      let totalSellValue = 0;
+      for (let j = 0; j < 3; j++) {
+        if (currentValues[j] > targetValues[j]) {
+          totalSellValue += (currentValues[j] - targetValues[j]);
+        }
+      }
+      const feeCost = totalSellValue * redemptionFeeRate;
+      const netValue = totalValue - feeCost;
+      // Redistribute net of fees
+      for (let j = 0; j < 3; j++) {
+        shares[j] = (netValue * w[j]) / price[j];
+      }
+      totalInvested += feeCost; // fee is a cost
     }
 
     result.push({
