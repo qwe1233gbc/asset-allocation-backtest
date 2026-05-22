@@ -50,6 +50,14 @@
     padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s;
   }
   .theme-toggle:hover { background: rgba(255,255,255,0.2); }
+  .data-selector {
+    background: var(--tag-bg); border: 1px solid rgba(255,255,255,0.15);
+    color: var(--header-text); padding: 5px 10px; border-radius: 16px;
+    cursor: pointer; font-size: 0.82rem; outline: none;
+    transition: background 0.2s; max-width: 160px;
+  }
+  .data-selector:hover { background: rgba(255,255,255,0.2); }
+  .data-selector option { color: #1e293b; background: white; }
 
   /* Section Nav */
   .section-nav {
@@ -209,6 +217,11 @@
       <div class="subtitle">标普500 · 纳斯达克100 · 中证红利低波 — 分红再投资</div>
     </div>
     <div class="header-right">
+      <select class="data-selector" id="dataSelector" title="切换数据源">
+        <option value="backtest_data_fee.json" selected>含费率(推荐)</option>
+        <option value="backtest_data.json">原始指数+股息</option>
+        <option value="backtest_data_v2.json">混合基金净值</option>
+      </select>
       <div class="data-info" id="dataInfo">加载数据中...</div>
       <button class="theme-toggle" id="themeToggle" title="切换暗色模式">🌙 暗色</button>
     </div>
@@ -419,23 +432,43 @@ const MONTHLY_FEE_DRAG = 0.0085 / 12; // management 0.6% + custody 0.25% = 0.85%
 // ═══════════════════════════════════════════════
 // Data Loading
 // ═══════════════════════════════════════════════
-async function loadData() {
+const DATA_LABELS = {
+  'backtest_data.json': '含股息再投资',
+  'backtest_data_v2.json': '含费率模型(混合)',
+  'backtest_data_fee.json': '含费率(管理+托管费已扣除)',
+};
+
+async function loadData(dataFile) {
   try {
-    const resp = await fetch('backtest_data.json');
+    const resp = await fetch(dataFile);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     monthlyData = data.monthly_data;
     precomputed = data.portfolios;
     metadata = data.metadata;
     document.getElementById('loading').style.display = 'none';
+    const label = DATA_LABELS[dataFile] || '';
     document.getElementById('dataInfo').textContent =
-      `${metadata.data_start} → ${metadata.data_end} · ${metadata.n_months}个月 · ${metadata.n_years}年 · 含股息再投资`;
+      `${metadata.data_start} → ${metadata.data_end} · ${metadata.n_months}个月 · ${metadata.n_years}年 · ${label}`;
     initApp();
   } catch (err) {
     document.getElementById('loading').innerHTML =
-      `<div class="error-toast">数据加载失败: ${err.message}<br>请确保 backtest_data.json 与 index.html 在同一目录<br>或运行 python enhance_data.py 生成数据</div>`;
+      `<div class="error-toast">数据加载失败: ${err.message}<br>请确保 ${dataFile} 与 index.html 在同一目录<br>或运行 python generate_data.py 生成数据</div>`;
   }
 }
+
+// Data source selector
+document.addEventListener('DOMContentLoaded', () => {
+  const selector = document.getElementById('dataSelector');
+  selector.addEventListener('change', () => {
+    Object.values(charts).forEach(c => c.destroy());
+    charts = {};
+    document.getElementById('loading').style.display = 'flex';
+    loadData(selector.value);
+  });
+  // Initial load
+  loadData(selector.value);
+});
 
 // ═══════════════════════════════════════════════
 // Computation Engine
@@ -1256,8 +1289,6 @@ function fmtWeights() {
   return `${(currentWeights.sp * 100).toFixed(0)}/${(currentWeights.nq * 100).toFixed(0)}/${(currentWeights.dv * 100).toFixed(0)}`;
 }
 
-// ── Start ──
-loadData();
 </script>
 </body>
 </html>
